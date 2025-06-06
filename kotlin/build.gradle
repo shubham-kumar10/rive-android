@@ -1,7 +1,7 @@
 plugins {
     id "com.android.library"
     id "kotlin-android"
-    id "org.jetbrains.dokka"
+//    id "org.jetbrains.dokka"
     id "org.jetbrains.kotlin.plugin.allopen" version "2.1.20"
 }
 
@@ -30,7 +30,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = '17'
     }
 
     externalNativeBuild {
@@ -40,15 +40,15 @@ android {
         }
     }
 
-    dokkaGfm {
-        dokkaSourceSets {
-            named("main") {
-                noAndroidSdkLink.set(false)
-                outputDirectory.set(layout.buildDirectory.resolve("dokka"))
-                reportUndocumented.set(true)
-            }
-        }
-    }
+//    dokkaGfm {
+//        dokkaSourceSets {
+//            named("main") {
+//                noAndroidSdkLink.set(false)
+//                outputDirectory.set(layout.buildDirectory.resolve("dokka"))
+//                reportUndocumented.set(true)
+//            }
+//        }
+//    }
 }
 
 dependencies {
@@ -59,10 +59,10 @@ dependencies {
     // https://github.com/KeepSafe/ReLinker?tab=readme-ov-file#who-needs-relinker
     implementation "com.getkeepsafe.relinker:relinker:1.4.5"
 
-    androidTestImplementation "androidx.test.ext:junit-ktx:1.2.1"
-    androidTestImplementation "androidx.test:runner:1.6.2"
-    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:2.1.0"
-    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1"
+//    androidTestImplementation "androidx.test.ext:junit-ktx:1.2.1"
+//    androidTestImplementation "androidx.test:runner:1.6.2"
+//    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:2.1.0"
+//    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1"
 }
 
 allOpen {
@@ -70,4 +70,4 @@ allOpen {
     annotation "androidx.annotation.OpenForTesting"
 }
 
-apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
+//apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

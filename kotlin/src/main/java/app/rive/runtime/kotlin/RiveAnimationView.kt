@@ -405,16 +405,29 @@ open class RiveAnimationView(context: Context, attrs: AttributeSet? = null) :
             // Passes the resource through: ownership is coming from elsewhere.
             is ResourceType.ResourceRiveFile -> onComplete(resource.file)
             // loadFromNetwork() releases after onComplete() is called.
-            is ResourceType.ResourceUrl -> loadFromNetwork(resource.url, onComplete)
+            is ResourceType.ResourceUrl -> {
+                try {
+                    Log.d(TAG, "Loading resource from URL: ${resource.url}")
+                    loadFromNetwork(resource.url, onComplete)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to load resource from URL: ${resource.url}", e)
+                    throw RiveException("loadFileFromResource: Failed to load resource from URL: ${resource.url} ")
+                }
+            }
             is ResourceType.ResourceBytes -> {
-                val file = File(
-                    bytes = resource.bytes,
-                    rendererType = rendererAttributes.rendererType,
-                    fileAssetLoader = rendererAttributes.assetLoader,
-                )
-                onComplete(file)
-                // Don't retain the handle.
-                file.release()
+                try {
+                    Log.d(TAG, "Loading resource from bytes, size: ${resource.bytes.size}")
+                    val file = File(
+                        bytes = resource.bytes,
+                        rendererType = rendererAttributes.rendererType,
+                        fileAssetLoader = rendererAttributes.assetLoader,
+                    )
+                    onComplete(file)
+                    file.release()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to load resource from bytes", e)
+//                    throw RiveException("loadFileFromResource: Failed to load resource from bytes:${resource.bytes.size} ")
+                }
             }
 
             is ResourceType.ResourceId -> resources.openRawResource(resource.id).use {
@@ -431,18 +444,36 @@ open class RiveAnimationView(context: Context, attrs: AttributeSet? = null) :
     }
 
     private fun loadFromNetwork(url: String, onComplete: (File) -> Unit) {
-        val queue = Volley.newRequestQueue(context.applicationContext)
-        val stringRequest = RiveFileRequest(
-            url,
-            rendererAttributes.rendererType,
-            {
-                onComplete(it)
-                it.release()
-            },
-            { throw IOException("Unable to download Rive file $url") },
-            assetLoader = rendererAttributes.assetLoader
-        )
-        queue.add(stringRequest)
+        try {
+            val encodedUrl = url.replace(" ", "%20")
+            Log.d(TAG, "Starting download from URL: $encodedUrl")
+
+            val queue = Volley.newRequestQueue(context.applicationContext)
+            val stringRequest = RiveFileRequest(
+                encodedUrl,  // Use the encoded URL
+                rendererAttributes.rendererType,
+                { file ->
+                    try {
+                        Log.d(TAG, "Successfully downloaded file from $encodedUrl")
+                        onComplete(file)
+                        file.release()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing downloaded file: ${e.message}", e)
+//                        throw RiveException("loadFromNetwork: Error processing downloaded file: ${e.message}")
+                    }
+                },
+                { error ->
+                    Log.e(TAG, "Error downloading file from $encodedUrl: ${error.message}", error)
+//                    throw RiveException("loadFromNetwork: Error downloading file from $encodedUrl: ${error.message}\"")
+                    // Optionally: Handle the error by notifying listeners
+                },
+                assetLoader = rendererAttributes.assetLoader
+            )
+            queue.add(stringRequest)
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception in loadFromNetwork: ${e.message}", e)
+//            throw RiveException("loadFromNetwork: Exception in loadFromNetwork: ${e.message}")
+        }
     }
 
     /** Pauses all playing [animation instances][LinearAnimationInstance]. */
